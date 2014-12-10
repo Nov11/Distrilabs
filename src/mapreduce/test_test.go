@@ -21,7 +21,7 @@ const (
 
 // Split in words
 func MapFunc(value string) *list.List {
-  DPrintf("Map %v\n", value)
+  DPrintf("Map %v\n", value[0:4])
   res := list.New()
   words := strings.Fields(value);
   for _, w := range words {
@@ -34,7 +34,7 @@ func MapFunc(value string) *list.List {
 // Just return key
 func ReduceFunc(key string, values *list.List) string {
   for e := values.Front(); e != nil; e = e.Next() {
-    DPrintf("Reduce %s %v\n", key, e.Value)
+    //DPrintf("Reduce %s %v\n", key, e.Value)
   }
   return ""
 }
@@ -110,7 +110,15 @@ func makeInput() string {
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp. can't use current directory since
 // AFS doesn't support UNIX-domain sockets.
+var portNumberForWindows int = 18888
 func port(suffix string) string {
+	if suffix == "master" {
+		return ":" + strconv.Itoa(portNumberForWindows)
+	}else{
+		portNumberForWindows++
+		return ":" + strconv.Itoa(portNumberForWindows)
+	}
+	/*
   s := "/var/tmp/824-"
   s += strconv.Itoa(os.Getuid()) + "/"
   os.Mkdir(s, 0777)
@@ -118,11 +126,13 @@ func port(suffix string) string {
   s += strconv.Itoa(os.Getpid()) + "-"
   s += suffix
   return s
+  */
 }
 
 func setup() *MapReduce {
   file := makeInput()
   master := port("master")
+  DPrintf("before make map reduce")
   mr := MakeMapReduce(nMap, nReduce, file, master)
   return mr
 }
@@ -133,14 +143,16 @@ func cleanup(mr *MapReduce) {
 }
 
 func TestBasic(t *testing.T) {
-  fmt.Printf("Test: Basic mapreduce ...\n")
+  DPrintf("###########Test: Basic mapreduce ...\n")
   mr := setup()
+  DPrintf("##########gonna setup workers!!!!!!!!!!!!!!")
   for i := 0; i < 2; i++ {
     go RunWorker(mr.MasterAddress, port("worker" + strconv.Itoa(i)),
                  MapFunc, ReduceFunc, -1)
   }
   // Wait until MR is done
   <- mr.DoneChannel
+  DPrintf("##########checks begin here!!!!!!!!!!!!!!!!!!!!!!!!!")
   check(t, mr.file)
   checkWorker(t, mr.stats)
   cleanup(mr)

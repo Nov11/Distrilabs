@@ -69,11 +69,12 @@ func RunWorker(MasterAddress string, me string,
   rpcs := rpc.NewServer()
   rpcs.Register(wk)
   os.Remove(me)   // only needed for "unix"
-  l, e := net.Listen("unix", me)
+  l, e := net.Listen("tcp", me)
   if e != nil {
     log.Fatal("RunWorker: worker ", me, " error: ", e)
   }
   wk.l = l
+  DPrintf("$$$$$$$$$$regs to master")
   Register(MasterAddress, me)
 
   // DON'T MODIFY CODE BELOW

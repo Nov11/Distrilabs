@@ -42,6 +42,11 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
   }
   return
 }
+func DPrintln(str string) {
+	if Debug > 0 {
+		fmt.Println(str)
+	}
+}
 
 // Map and Reduce deal with <key, value> pairs:
 type KeyValue struct {
@@ -78,13 +83,16 @@ func InitMapReduce(nmap int, nreduce int,
   mr.DoneChannel = make(chan bool)
 
   // initialize any additional state here
+  mr.Workers = make(map[string]*WorkerInfo)
   return mr
 }
 
 func MakeMapReduce(nmap int, nreduce int,
                    file string, master string) *MapReduce {
   mr := InitMapReduce(nmap, nreduce, file, master)
+  DPrintln("#################before mr.startregistrationserver()!!!!!!!!!!!!!!!!!!!!!!!!!!")
   mr.StartRegistrationServer()
+  DPrintln("#################before mr.Run()!!!!!!!!!!!!!!!!!!!!!!!!!!")
   go mr.Run()
   return mr
 }
@@ -107,7 +115,7 @@ func (mr *MapReduce) StartRegistrationServer() {
   rpcs := rpc.NewServer()
   rpcs.Register(mr)
   os.Remove(mr.MasterAddress)   // only needed for "unix"
-  l, e := net.Listen("unix", mr.MasterAddress)
+  l, e := net.Listen("tcp", mr.MasterAddress)
   if e != nil {
     log.Fatal("RegstrationServer", mr.MasterAddress, " error: ", e)
   }
@@ -284,6 +292,7 @@ func DoReduce(job int, fileName string, nmap int,
 // XXX use merge sort
 func (mr *MapReduce) Merge() {
   DPrintf("Merge phase")
+  DPrintln("@master@@@@@@@@@merger")
   kvs := make(map[string]string)
   for i := 0; i < mr.nReduce; i++ {
     p := MergeName(mr.file, i)
@@ -357,6 +366,7 @@ func RunSingle(nMap int, nReduce int, file string,
 }
 
 func (mr *MapReduce) CleanupRegistration() {
+	DPrintln("in func :CleanupRegistration")
   args := &ShutdownArgs{}
   var reply ShutdownReply
   ok := call(mr.MasterAddress, "MapReduce.Shutdown", args, &reply)
@@ -368,14 +378,14 @@ func (mr *MapReduce) CleanupRegistration() {
 
 // Run jobs in parallel, assuming a shared file system
 func (mr *MapReduce) Run() {
-  fmt.Printf("Run mapreduce job %s %s\n", mr.MasterAddress, mr.file)
+  DPrintf("@master@mr.Run()@@@@@@@@@@@@@@Run mapreduce job %s %s\n", mr.MasterAddress, mr.file)
 
   mr.Split(mr.file)
   mr.stats = mr.RunMaster()
   mr.Merge()
   mr.CleanupRegistration()
 
-  fmt.Printf("%s: MapReduce done\n", mr.MasterAddress)
+  DPrintf("%s: MapReduce done\n", mr.MasterAddress)
 
   mr.DoneChannel <- true
 }
