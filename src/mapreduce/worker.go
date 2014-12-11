@@ -74,7 +74,7 @@ func RunWorker(MasterAddress string, me string,
     log.Fatal("RunWorker: worker ", me, " error: ", e)
   }
   wk.l = l
-  DPrintf("$$$$$$$$$$regs to master")
+  DPrintf("$$$$$$$$$$regs to master\n")
   Register(MasterAddress, me)
 
   // DON'T MODIFY CODE BELOW
@@ -85,6 +85,7 @@ func RunWorker(MasterAddress string, me string,
       go rpcs.ServeConn(conn)
       wk.nJobs += 1
     } else {
+      DPrintf("runworker cannot accept, err: %v\n", err)	
       break
     }
   }

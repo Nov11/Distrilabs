@@ -34,7 +34,7 @@ import "hash/fnv"
 // which Merge() merges into a single output.
 
 // Debugging
-const Debug = 0
+const Debug = 1
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
   if Debug > 0 {
@@ -98,7 +98,7 @@ func MakeMapReduce(nmap int, nreduce int,
 }
 
 func (mr *MapReduce) Register(args *RegisterArgs, res *RegisterReply) error {
-  DPrintf("Register: worker %s\n", args.Worker)
+  DPrintf("in func :Register: worker %s\n", args.Worker)
   mr.registerChannel <- args.Worker
   res.OK = true
   return nil
@@ -112,15 +112,22 @@ func (mr *MapReduce) Shutdown(args *ShutdownArgs, res *ShutdownReply) error {
 }
 
 func (mr *MapReduce) StartRegistrationServer() {
+	DPrintf("in StartRegistrationServer\n")
   rpcs := rpc.NewServer()
+  DPrintf("can r\n")
   rpcs.Register(mr)
+  DPrintf("can e\n")
   os.Remove(mr.MasterAddress)   // only needed for "unix"
   l, e := net.Listen("tcp", mr.MasterAddress)
   if e != nil {
+  	DPrintf("can R\n")
+  	fmt.Println(e)
+  	log.Fatal("Regst")
     log.Fatal("RegstrationServer", mr.MasterAddress, " error: ", e)
+    log.Fatal("R!!!")
   }
   mr.l = l
-
+	DPrintf("can reach here\n")
   // now that we are listening on the master address, can fork off
   // accepting connections to another thread.
   go func() {
@@ -202,6 +209,7 @@ func hash(s string) uint32 {
 func DoMap(JobNumber int, fileName string,
            nreduce int, Map func(string) *list.List) {
   name := MapName(fileName, JobNumber)
+  DPrintln("DoMap filename :" + name)
   file, err := os.Open(name)
   if err != nil {
     log.Fatal("DoMap: ", err);
@@ -280,6 +288,7 @@ func DoReduce(job int, fileName string, nmap int,
   if err != nil {
     log.Fatal("DoReduce: create ", err);
   }
+  DPrintln("doreduce create" + p)
   enc := json.NewEncoder(file)
   for _, k := range keys {
     res := Reduce(k, kvs[k])

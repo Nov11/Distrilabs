@@ -2,7 +2,7 @@ package mapreduce
 
 import "fmt"
 import "net/rpc"
-import "log"
+
 
 const (
   Map = "Map"
@@ -61,7 +61,7 @@ func call(srv string, rpcname string,
           args interface{}, reply interface{}) bool {
   c, errx := rpc.Dial("tcp", "localhost" + srv)
   if errx != nil {
-  	log.Fatal("call","localhost" + srv, " error: ", errx)
+  	fmt.Println("in Function :call ","localhost" + srv, " error: ", errx)
     return false
   }
   defer c.Close()
